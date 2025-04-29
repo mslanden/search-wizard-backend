@@ -1,0 +1,43 @@
+{
+  "document_type": "Role Specification / Job Description",
+  "sections": [
+    {
+      "name": "Cover Page",
+      "description": "Introduces the document with high-level role identification.",
+      "typical_content": "Role title (e.g., Eviation CEO), document title, date (e.g., January 2022), header images or logos.",
+      "style_notes": "Designed to be eye-catching with prominent imagery; may include banners or header graphics.",
+      "subsections": null,
+      "design": "Fallback on large banner images; potentially CSS styled for clear spacing and emphasis on the title."
+    },
+    {
+      "name": "Role Overview",
+      "description": "Provides a summary of responsibilities and an overview of the role.",
+      "typical_content": "Bullet points outlining key responsibilities, brief role summary, mission statement, and essential qualifications.",
+      "style_notes": "Uses bullet points and short paragraphs; formal tone with concise statements.",
+      "subsections": null,
+      "design": "Clear sections separated by whitespace; use of bullet symbols and consistent text block styling."
+    },
+    {
+      "name": "Detailed Specifications",
+      "description": "Elaborates on the role\u2019s detailed responsibilities, requirements, and expectations.",
+      "typical_content": "In-depth descriptions, additional bullet lists, requirement details, responsibilities listed in multiple text blocks across several pages.",
+      "style_notes": "Structured with numerous text blocks; formal, professional, and detail-oriented language.",
+      "subsections": null,
+      "design": "Divided across multiple pages with consistent text block layout; may include numbered or bulleted lists."
+    },
+    {
+      "name": "Additional Information / Appendices",
+      "description": "Contains supplementary information or legal and disclaimer texts that support the main content.",
+      "typical_content": "Notes, disclaimers, methodological notes, or any supporting documentation.",
+      "style_notes": "Less formal tone relative to the main text; clear separation from core content.",
+      "subsections": null,
+      "design": "Often less graphically intensive; similar layout styling but with smaller text blocks or reduced emphasis."
+    }
+  ],
+  "overall_tone": "Formal and Professional",
+  "formatting_notes": "Document is divided across multiple pages with consistent page dimensions (e.g., 540x720). Each page contains a varying number of text blocks, and image placement is prevalent, especially on the cover page. Bullet points and numeric listings are common.",
+  "style_notes": "Combination of high-density imagery (over 700 images) with structured text blocks. The document emphasizes clarity, readability, and a professional look consistent with executive role documentation.",
+  "pattern_notes": "Content is organized in a hierarchical manner: starting with a cover page, followed by an overview, detailed role specifics, and supplementary appendices. Consistent page layouts are observed with distinct text block clustering and repetitive use of bullet points.",
+  "photo_notes": "An unusually high number of images (713 detected) indicate heavy use of graphical elements for branding, emphasis, or decorative purposes. Images vary in size (e.g., header images like 485x86 and many small icons of 2x2), predominantly in PNG format.",
+  "additional_notes": "No tables were found, suggesting a preference for text and image integration over grid-based data presentation. The document's design prioritizes visual branding alongside structured content presentation, suitable for high-level role specifications."
+}
