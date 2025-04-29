@@ -123,36 +123,6 @@ async def analyze_structure(request: dict = Body(...)):
         raise HTTPException(status_code=500, detail=f"Error analyzing structure: {str(e)}")
 
 # Document generation endpoint
-@app.post("/generate-document")
-async def generate_document(request: dict = Body(...)):
-    """Generate a document based on a document type and structure"""
-    try:
-        document_type = request.get("document_type")
-        structure = request.get("structure")
-        user_input = request.get("user_input", "")
-        
-        if not document_type or not structure:
-            raise HTTPException(status_code=400, detail="Missing document_type or structure")
-        
-        # Initialize the writer agent
-        writer_agent = WriterAgent(framework="openai")
-        
-        # Generate the document
-        generated_document = writer_agent.create_document_with_structure(
-            document_type=document_type,
-            structure=structure,
-            user_input=user_input
-        )
-        
-        # Return the generated document
-        timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        return {
-            "html_content": generated_document,
-            "document_type": document_type,
-            "timestamp": timestamp
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error generating document: {str(e)}")
 
 # Initialize agents at startup
 structure_agent = None
@@ -215,10 +185,29 @@ async def root():
 @app.post("/generate-document", response_model=DocumentResponse)
 async def generate_document(request: DocumentRequest):
     """Generate a document based on the provided parameters."""
-    # Make sure json is available throughout this function's scope
     import json
-    
     global writer_agent
+    # Log incoming request for debugging
+    print("Received /generate-document request:", request.dict())
+
+    # Validate required fields
+    if not request.document_type:
+        raise HTTPException(status_code=400, detail="Missing document_type")
+
+    # Validate that at least one structure is available (from golden examples)
+    # For this flow, the frontend should send the structure as part of the request, or the backend should fetch it from golden examples.
+    # If not present, raise a clear error.
+    structure = None
+    if hasattr(request, 'structure') and request.structure:
+        structure = request.structure
+    elif hasattr(request, 'project_id') and request.project_id:
+        # Try to fetch structure from golden examples (not implemented here, placeholder)
+        # structure = fetch_structure_from_golden_examples(request.project_id, request.document_type)
+        pass
+    if not structure:
+        raise HTTPException(status_code=400, detail="No structure provided or found for document generation. Please select a golden example or upload a structure.")
+
+    # Prepare knowledge base from artifacts (existing logic follows)
     
     # Check if writer agent is initialized
     if not writer_agent:
