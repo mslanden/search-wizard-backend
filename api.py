@@ -76,7 +76,7 @@ async def analyze_file(file: UploadFile = File(...)):
         structure_agent = StructureAgent(framework="openai")
         
         # Analyze the file
-        structure = structure_agent.get_document_structure(temp_file_path)
+        structure = structure_agent.analyze_structure([temp_file_path])
         
         # Clean up the temporary file
         os.remove(temp_file_path)
@@ -110,7 +110,7 @@ async def analyze_structure(request: dict = Body(...)):
         structure_agent = StructureAgent(framework="openai")
         
         # Analyze the file
-        structure = structure_agent.get_document_structure(temp_file_path)
+        structure = structure_agent.analyze_structure([temp_file_path])
         
         # Clean up the temporary file
         os.remove(temp_file_path)
@@ -135,7 +135,7 @@ async def generate_document(request: dict = Body(...)):
         writer_agent = WriterAgent(framework="openai")
         
         # Generate the document
-        generated_document = writer_agent.generate_document(
+        generated_document = writer_agent.create_document_with_structure(
             document_type=document_type,
             structure=structure,
             user_input=user_input
