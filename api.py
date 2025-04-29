@@ -9,8 +9,9 @@ import os
 import json
 import sys
 import datetime
+import requests
 from typing import Optional, Dict, List, Any
-from fastapi import FastAPI, HTTPException, Body
+from fastapi import FastAPI, HTTPException, Body, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -42,6 +43,12 @@ app = FastAPI(title="Search Wizard API",
               description="API for document generation and other backend functionality",
               version="1.0.0")
 
+# Health check endpoint
+@app.get("/health")
+async def health_check():
+    """Health check endpoint to verify the API is running"""
+    return {"status": "ok", "message": "API is running"}
+
 # Mount static files directory
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
@@ -53,6 +60,96 @@ app.add_middleware(
     allow_methods=["*"],  # Allows all methods
     allow_headers=["*"],  # Allows all headers
 )
+
+# File analysis endpoint
+@app.post("/analyze-file")
+async def analyze_file(file: UploadFile = File(...)):
+    """Analyze a file using the StructureAgent to extract document structure"""
+    try:
+        # Save the uploaded file to a temporary location
+        temp_file_path = f"/tmp/{file.filename}"
+        with open(temp_file_path, "wb") as temp_file:
+            content = await file.read()
+            temp_file.write(content)
+            
+        # Initialize the structure agent
+        structure_agent = StructureAgent(framework="openai")
+        
+        # Analyze the file
+        structure = structure_agent.get_document_structure(temp_file_path)
+        
+        # Clean up the temporary file
+        os.remove(temp_file_path)
+        
+        return {"structure": structure}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error analyzing file: {str(e)}")
+
+# Structure analysis endpoint
+@app.post("/analyze-structure")
+async def analyze_structure(request: dict = Body(...)):
+    """Analyze a document structure from a file URL"""
+    try:
+        document_id = request.get("documentId")
+        file_url = request.get("fileUrl")
+        
+        if not document_id or not file_url:
+            raise HTTPException(status_code=400, detail="Missing documentId or fileUrl")
+            
+        # Download the file from the URL
+        temp_file_path = f"/tmp/document_{document_id}.pdf"
+        response = requests.get(file_url)
+        
+        if response.status_code != 200:
+            raise HTTPException(status_code=500, detail=f"Failed to download file: {response.status_code}")
+            
+        with open(temp_file_path, "wb") as temp_file:
+            temp_file.write(response.content)
+            
+        # Initialize the structure agent
+        structure_agent = StructureAgent(framework="openai")
+        
+        # Analyze the file
+        structure = structure_agent.get_document_structure(temp_file_path)
+        
+        # Clean up the temporary file
+        os.remove(temp_file_path)
+        
+        return {"structure": structure}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error analyzing structure: {str(e)}")
+
+# Document generation endpoint
+@app.post("/generate-document")
+async def generate_document(request: dict = Body(...)):
+    """Generate a document based on a document type and structure"""
+    try:
+        document_type = request.get("document_type")
+        structure = request.get("structure")
+        user_input = request.get("user_input", "")
+        
+        if not document_type or not structure:
+            raise HTTPException(status_code=400, detail="Missing document_type or structure")
+        
+        # Initialize the writer agent
+        writer_agent = WriterAgent(framework="openai")
+        
+        # Generate the document
+        generated_document = writer_agent.generate_document(
+            document_type=document_type,
+            structure=structure,
+            user_input=user_input
+        )
+        
+        # Return the generated document
+        timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        return {
+            "html_content": generated_document,
+            "document_type": document_type,
+            "timestamp": timestamp
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error generating document: {str(e)}")
 
 # Initialize agents at startup
 structure_agent = None
