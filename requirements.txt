@@ -4,8 +4,8 @@ PyPDF2==3.0.1
 python-docx==0.8.11
 pillow==10.0.0
 
-# Enhanced document analysis
-PyMuPDF==1.22.5  # aka fitz - advanced PDF processing with better image extraction
+# Enhanced document analysis - use pre-built wheel
+https://github.com/pymupdf/PyMuPDF/releases/download/1.22.5/PyMuPDF-1.22.5-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
 
 # LLM API dependencies
 
