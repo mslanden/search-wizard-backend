@@ -5,7 +5,7 @@ python-docx==0.8.11
 pillow==10.0.0
 
 # Enhanced document analysis
-PyMuPDF==1.22.5  # aka fitz - advanced PDF processing with better image extraction
+PyMuPDF==1.22.5 --no-build-isolation  # aka fitz - advanced PDF processing with better image extraction
 
 # LLM API dependencies
 

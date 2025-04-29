@@ -1,0 +1,7 @@
+libmupdf-dev
+libfreetype6-dev
+libharfbuzz-dev
+libjpeg-dev
+libopenjp2-7-dev
+libffi-dev
+pkg-config
