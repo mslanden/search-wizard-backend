@@ -28,17 +28,17 @@ from agents.kb_support import enhance_prompt_with_kb
 
 def setup_agents():
     """Initialize both agents using available API keys."""
-    # Get API key from environment variables - try in order of preference (OpenAI first)
-    api_key = os.getenv("GEMINI_API_KEY")
-    framework = "gemini"
+    # Get API key from environment variables - try in order of preference (Anthropic first)
+    api_key = os.getenv("ANTHROPIC_API_KEY")
+    framework = "anthropic"
     
-    if not api_key:
-        api_key = os.getenv("ANTHROPIC_API_KEY")
-        framework = "anthropic"
-        
     if not api_key:
         api_key = os.getenv("OPENAI_API_KEY")
         framework = "openai"
+        
+    if not api_key:
+        api_key = os.getenv("GEMINI_API_KEY")
+        framework = "gemini"
         
     if not api_key:
         print("Error: No API key found in environment variables.")

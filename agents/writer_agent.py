@@ -45,7 +45,7 @@ class WriterAgent:
     """
     
     def __init__(self, 
-                 framework: str = "openai", 
+                 framework: str = "anthropic", 
                  api_key: Optional[str] = None,
                  system_prompt: Optional[str] = None):
         """Initialize the WriterAgent.
@@ -290,13 +290,13 @@ class WriterAgent:
 def main():
     """Example usage of the WriterAgent class."""
     try:
-        # Get API key from environment variables - try in order of preference (OpenAI first)
-        api_key = os.getenv("OPENAI_API_KEY")
-        framework = "openai"
+        # Get API key from environment variables - try in order of preference (Anthropic first)
+        api_key = os.getenv("ANTHROPIC_API_KEY") 
+        framework = "anthropic"
         
         if not api_key:
-            api_key = os.getenv("ANTHROPIC_API_KEY") 
-            framework = "anthropic"
+            api_key = os.getenv("OPENAI_API_KEY")
+            framework = "openai"
             
         if not api_key:
             api_key = os.getenv("GEMINI_API_KEY")
