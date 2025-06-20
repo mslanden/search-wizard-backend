@@ -25,8 +25,8 @@ load_dotenv()
 
 # Print environment variables for debugging
 print("Environment variables loaded:")
-print(f"SUPABASE_URL: {'Set' if os.environ.get('SUPABASE_URL') else 'Not set'}")
-print(f"SUPABASE_KEY: {'Set' if os.environ.get('SUPABASE_KEY') else 'Not set'}")
+print(f"NEXT_PUBLIC_SUPABASE_URL: {'Set' if os.environ.get('NEXT_PUBLIC_SUPABASE_URL') else 'Not set'}")
+print(f"NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY: {'Set' if os.environ.get('NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY') else 'Not set'}")
 print(f"OPENAI_API_KEY: {'Set' if os.environ.get('OPENAI_API_KEY') else 'Not set'}")
 print(f"ANTHROPIC_API_KEY: {'Set' if os.environ.get('ANTHROPIC_API_KEY') else 'Not set'}")
 print(f"GEMINI_API_KEY: {'Set' if os.environ.get('GEMINI_API_KEY') else 'Not set'}")
@@ -182,6 +182,57 @@ async def root():
     """Root endpoint to check if the API is running."""
     return {"status": "ok", "message": "Search Wizard API is running"}
 
+# Content processing endpoints
+class ProcessContentRequest(BaseModel):
+    content_type: str  # 'url' or 'text'
+    content: str       # URL or text content
+    artifact_type: Optional[str] = None
+
+class ProcessContentResponse(BaseModel):
+    processed_content: str
+    content_type: str
+    metadata: Dict[str, Any]
+
+@app.post("/process-content", response_model=ProcessContentResponse)
+async def process_content(request: ProcessContentRequest):
+    """Process URL or text content for artifact creation."""
+    from utils import scrape_url_content, process_text_content
+    
+    try:
+        if request.content_type == "url":
+            # Scrape URL content
+            scraped_content = scrape_url_content(request.content)
+            processed_content = process_text_content(scraped_content, request.artifact_type)
+            
+            return ProcessContentResponse(
+                processed_content=processed_content,
+                content_type="url",
+                metadata={
+                    "source_url": request.content,
+                    "content_length": len(processed_content),
+                    "artifact_type": request.artifact_type
+                }
+            )
+            
+        elif request.content_type == "text":
+            # Process text content
+            processed_content = process_text_content(request.content, request.artifact_type)
+            
+            return ProcessContentResponse(
+                processed_content=processed_content,
+                content_type="text",
+                metadata={
+                    "content_length": len(processed_content),
+                    "artifact_type": request.artifact_type
+                }
+            )
+            
+        else:
+            raise HTTPException(status_code=400, detail="Invalid content_type. Must be 'url' or 'text'")
+            
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error processing content: {str(e)}")
+
 @app.post("/generate-document", response_model=DocumentResponse)
 async def generate_document(request: DocumentRequest):
     """Generate a document based on the provided parameters."""
@@ -253,7 +304,7 @@ async def generate_document(request: DocumentRequest):
                         headers = {}
                         if 'supabase.co' in parsed_url.netloc and '/storage/v1/object/public/' in parsed_url.path:
                             # This is a Supabase storage URL, add authentication if needed
-                            supabase_key = os.environ.get('SUPABASE_KEY')
+                            supabase_key = os.environ.get('NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY')
                             if supabase_key:
                                 headers['apikey'] = supabase_key
                                 print("Added Supabase authentication to request")
@@ -406,7 +457,7 @@ async def generate_document(request: DocumentRequest):
                         headers = {}
                         if 'supabase.co' in parsed_url.netloc and '/storage/v1/object/public/' in parsed_url.path:
                             # This is a Supabase storage URL, add authentication if needed
-                            supabase_key = os.environ.get('SUPABASE_KEY')
+                            supabase_key = os.environ.get('NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY')
                             if supabase_key:
                                 headers['apikey'] = supabase_key
                                 print("Added Supabase authentication to request")
@@ -547,14 +598,14 @@ async def generate_document(request: DocumentRequest):
             # json is already imported at the top level
             
             # Get Supabase credentials
-            supabase_url = os.environ.get('SUPABASE_URL')
-            supabase_key = os.environ.get('SUPABASE_KEY')
+            supabase_url = os.environ.get('NEXT_PUBLIC_SUPABASE_URL')
+            supabase_key = os.environ.get('NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY')
             
             if not supabase_url or not supabase_key:
                 print("ERROR: Supabase credentials not found in environment variables")
                 raise HTTPException(
                     status_code=500, 
-                    detail="Supabase credentials missing. Please set SUPABASE_URL and SUPABASE_KEY in .env file"
+                    detail="Supabase credentials missing. Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY in .env file"
                 )
             
             # Initialize Supabase client
@@ -1205,3 +1256,9 @@ def naive_linechunk(text, max_length=5000, overlap=200):
         start = end - overlap if end < text_len else text_len
         
     return chunks
+
+# Run the server
+if __name__ == "__main__":
+    import uvicorn
+    print("Starting FastAPI server on http://localhost:8000")
+    uvicorn.run(app, host="0.0.0.0", port=8000)

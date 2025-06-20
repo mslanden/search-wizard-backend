@@ -1,4 +1,4 @@
-#!/Users/marcelinolanden/Desktop/workProjects/search-wizard/backend/venv/bin/python3.12
+#!/Users/marcelinolanden/Documents/workProjects/search-wizard/backend/venv/bin/python3.12
 # -*- coding: utf-8 -*-
 import re
 import sys

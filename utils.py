@@ -260,3 +260,167 @@ def extract_text_from_pdf(pdf_content):
     except Exception as e:
         logger.error(f"Error extracting text from PDF: {type(e).__name__}: {str(e)}")
         return f"[PDF text extraction failed: {str(e)}]"
+
+
+def scrape_url_content(url: str) -> str:
+    """
+    Scrape and extract text content from a URL.
+    
+    Args:
+        url (str): URL to scrape
+        
+    Returns:
+        str: Extracted text content from the webpage
+    """
+    try:
+        from bs4 import BeautifulSoup
+        import re
+        
+        logger.info(f"Scraping content from URL: {url}")
+        
+        # Add user agent to avoid blocking
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        }
+        
+        response = requests.get(url, headers=headers, timeout=30)
+        response.raise_for_status()
+        
+        # Parse HTML content
+        soup = BeautifulSoup(response.content, 'html.parser')
+        
+        # Remove script and style elements
+        for element in soup(['script', 'style', 'nav', 'header', 'footer', 'aside']):
+            element.decompose()
+        
+        # Get main content - try common content containers first
+        content_selectors = [
+            'main', 'article', '[role="main"]', '.content', '#content',
+            '.post-content', '.entry-content', '.article-body'
+        ]
+        
+        main_content = None
+        for selector in content_selectors:
+            main_content = soup.select_one(selector)
+            if main_content:
+                break
+        
+        if not main_content:
+            # Fallback to body
+            main_content = soup.find('body')
+        
+        if not main_content:
+            main_content = soup
+        
+        # Extract text
+        text = main_content.get_text(separator=' ', strip=True)
+        
+        # Clean up text
+        text = re.sub(r'\s+', ' ', text)  # Normalize whitespace
+        text = re.sub(r'\n\s*\n', '\n\n', text)  # Clean up line breaks
+        
+        # Extract page title if available
+        title = soup.find('title')
+        if title:
+            title_text = title.get_text().strip()
+            text = f"Title: {title_text}\n\n{text}"
+        
+        logger.info(f"Successfully extracted {len(text)} characters from URL")
+        return text
+        
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Error fetching URL {url}: {str(e)}")
+        return f"[Error fetching URL: {str(e)}]"
+    except Exception as e:
+        logger.error(f"Error scraping content from {url}: {str(e)}")
+        return f"[Error extracting content: {str(e)}]"
+
+
+def process_text_content(text: str, artifact_type: str = None) -> str:
+    """
+    Process raw text content based on artifact type.
+    
+    Args:
+        text (str): Raw text content
+        artifact_type (str, optional): Type of artifact for specialized processing
+        
+    Returns:
+        str: Processed text content
+    """
+    try:
+        import re
+        
+        logger.info(f"Processing text content of {len(text)} characters")
+        
+        # Basic text cleaning
+        processed_text = text.strip()
+        
+        # Normalize whitespace
+        processed_text = re.sub(r'\s+', ' ', processed_text)
+        
+        # Clean up excessive line breaks
+        processed_text = re.sub(r'\n\s*\n\s*\n+', '\n\n', processed_text)
+        
+        # Remove any control characters except newlines and tabs
+        processed_text = re.sub(r'[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]', '', processed_text)
+        
+        # Artifact-type specific processing
+        if artifact_type:
+            artifact_type = artifact_type.lower()
+            
+            if 'job' in artifact_type or 'posting' in artifact_type:
+                # For job postings, try to structure the content
+                processed_text = structure_job_posting_text(processed_text)
+            elif 'resume' in artifact_type or 'cv' in artifact_type:
+                # For resumes, maintain structure better
+                processed_text = structure_resume_text(processed_text)
+            elif 'company' in artifact_type:
+                # For company info, try to extract key sections
+                processed_text = structure_company_text(processed_text)
+        
+        logger.info(f"Text processing complete, output length: {len(processed_text)}")
+        return processed_text
+        
+    except Exception as e:
+        logger.error(f"Error processing text content: {str(e)}")
+        return text  # Return original text if processing fails
+
+
+def structure_job_posting_text(text: str) -> str:
+    """Structure job posting text to highlight key sections."""
+    sections = {
+        'title': r'(?i)(job title|position|role):\s*(.+?)(?=\n|$)',
+        'company': r'(?i)(company|organization):\s*(.+?)(?=\n|$)',
+        'location': r'(?i)(location|where):\s*(.+?)(?=\n|$)',
+        'requirements': r'(?i)(requirements?|qualifications?|skills?):(.*?)(?=\n\n|\Z)',
+        'responsibilities': r'(?i)(responsibilities?|duties?|role description):(.*?)(?=\n\n|\Z)',
+        'benefits': r'(?i)(benefits?|compensation|salary):(.*?)(?=\n\n|\Z)'
+    }
+    
+    structured_text = text
+    for section, pattern in sections.items():
+        match = re.search(pattern, text, re.DOTALL)
+        if match and len(match.groups()) > 1:
+            content = match.group(2).strip()
+            if content:
+                structured_text = structured_text.replace(match.group(0), f"\n\n{section.upper()}:\n{content}")
+    
+    return structured_text
+
+
+def structure_resume_text(text: str) -> str:
+    """Structure resume text to maintain formatting."""
+    # Preserve section headers and structure
+    text = re.sub(r'(?i)^(experience|education|skills|summary|objective|contact)(.*)$', 
+                  r'\n\1\2\n', text, flags=re.MULTILINE)
+    return text
+
+
+def structure_company_text(text: str) -> str:
+    """Structure company information text."""
+    # Look for common company info sections
+    sections = ['about', 'mission', 'values', 'history', 'products', 'services']
+    for section in sections:
+        pattern = rf'(?i)^({section}[:\s]*)(.*)$'
+        text = re.sub(pattern, rf'\n\1\n\2', text, flags=re.MULTILINE)
+    return text
